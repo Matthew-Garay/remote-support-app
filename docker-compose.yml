@@ -1,0 +1,88 @@
+version: "3.9"
+
+services:
+  # Servidor de Señalización (WebSocket)
+  # Nota: En desarrollo, se ejecuta localmente
+  # En producción, se despliega en AWS/Azure/GCP
+  signal-server:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: remote-support/signal-server:latest
+    container_name: signal-server
+    environment:
+      - SERVER_HOST=${SERVER_HOST:-0.0.0.0}
+      - SERVER_PORT=${SERVER_PORT:-8443}
+      - SIGNAL_WS_PORT=${SIGNAL_WS_PORT:-8080}
+      - SIGNAL_MODE=production
+      - ICE_RESTART_THRESHOLD=${ICE_RESTART_THRESHOLD:-3}
+      - MAX_SESSION_DURATION=${MAX_SESSION_DURATION:-3600}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    ports:
+      - "8443:8443"
+      - "8080:8080"
+    volumes:
+      - ./certs:/app/certs:ro
+    restart: unless-stopped
+    networks:
+      - remote-support-net
+
+  # Servidor STUN (Coturn o Rust STUN)
+  # Coturn es el más estable y maduro para producción
+  stun-server:
+    image: coturn/coturn:4.6.1
+    container_name: stun-server
+    environment:
+      - TURN_SERVER=localhost:5349
+      - RFC6156_LOG_FILE=/var/log/turn.log
+      - LISTENAKI=udp:3478
+      - LISTENAKI=tcp:5349
+    ports:
+      - "3478:3478/udp"
+      - "3478:3478/tcp"
+      - "5349:5349/tcp"
+      - "5349:5349/udp"
+    volumes:
+      - ./certs:/etc/turn/certs:ro
+    restart: unless-stopped
+    networks:
+      - remote-support-net
+
+  # Servidor TURN (Coturn)
+  turn-server:
+    image: coturn/coturn:4.6.1
+    container_name: turn-server
+    environment:
+      - TURN_SERVER=localhost:5349
+      - RELAY_HOST=0.0.0.0
+      - RELAY_PORT_RANGE=49152-65535
+      - TURN_LOG_FILE=/var/log/turn.log
+      - TURN_SERVER_SECRET=change_me_in_production
+      - TURN_SERVER_CREDENTIAL=change_me_in_production
+      - TURN_USER=admin
+      - TURN_PASSWORD=admin123
+      - TURN_ENABLED=true
+      - TURN_RESTRICT_TO_REALM=false
+    ports:
+      - "3478:3478/udp"
+      - "3478:3478/tcp"
+      - "5349:5349/tcp"
+      - "5349:5349/udp"
+      - "49152-65535:49152-65535/udp"
+    volumes:
+      - ./certs:/etc/turn/certs:ro
+      - turn-db:/var/lib/turn
+    restart: unless-stopped
+    networks:
+      - remote-support-net
+
+networks:
+  remote-support-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  turn-db:
+    driver: local

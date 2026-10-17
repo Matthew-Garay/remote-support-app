@@ -1,0 +1,212 @@
+# ============================================
+# REMOTE SUPPORT APP - .gitignore
+# ============================================
+
+# ============================================
+# System / OS
+# ============================================
+Thumbs.db
+Thumbs.db:encryptable
+$RECYCYCLE.BIN/
+*.cab
+*.msi
+*.exe
+*.lnk
+ ~$*
+ Desktop.ini
+$eahboard
+*.inf
+*.manifest
+*.local
+*.crash
+*.min.js
+*.sublime-project
+*.sublime-workspace
+*.apk
+*.aab
+*.xcuserstate
+*.pbxuser
+*.mode1v3
+*.mode1v4
+*.perspective
+*.perspectivev3
+*.xcworkspace
+*.xcodeproj
+*.xcodeproj/user
+*.xcworkspace/contents.xcworkspacedata
+
+# ============================================
+# VS Code / IDEs
+# ============================================
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+.idea_modules/
+
+# ============================================
+# Flutter / Dart
+# ============================================
+# Flutter/Facebook (lib/generated)
+.devtools/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.flutter-toolstate
+.packages
+
+# Flutter build output
+/build/
+/debug/
+/profile/
+/release/
+/example/.dart_tool/
+/example/.flutter-plugins
+/example/.flutter-plugins-dependencies
+/example/.packages
+
+# Flutter generated files (lib/generated)
+**/lib/generated/**/*.g.dart
+**/lib/generated/**/*.freezed.dart
+**/lib/generated/**/*.graphql.dart
+**/lib/generated/**/*.gr.dart
+
+# Flutter pub
+.pub/
+.pub-cache/
+
+# ============================================
+# Rust / Cargo
+# ============================================
+# Cargo artifacts
+/target
+/cargo.lock
+
+# Rust build artifacts
+**/target/
+**/debug/
+**/release/
+**/*.rlib
+**/*.dll
+**/*.so
+**/*.dylib
+
+# Rust toolchain
+rust-toolchain.toml
+
+# flutter_rust_bridge artifacts
+**/rust_bridge_*.rs
+**/generate.rs
+build.rs
+
+# ============================================
+# Backend / Rust (Signal Server)
+# ============================================
+**/backend/target/
+**/backend/.vscode/
+**/backend/debug/
+**/backend/release/
+
+# Headers / deps
+**/backend/vendored/
+
+# ============================================
+# Docker
+# ============================================
+docker-compose.override.yml
+**/docker-compose.override.yml
+*.env
+!.env.example
+!.env.*.example
+
+# Docker containers
+**/build/
+**/node_modules/
+
+# Docker volumes
+**/.edgevolumes.json
+**/.dockerinit
+
+# ============================================
+# Build outputs / Archives
+# ============================================
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+*.par
+debug.log
+info.log
+
+# ============================================
+# Credentials & Secrets (MANTENER DENTRO DE .env)
+# ============================================
+*.key
+*.pem
+*.pfx
+*.p12
+*.crt
+*.csr
+id_rsa
+id_ed25519
+*.credentials
+*serviceAccount*
+firebase-token.json
+google-services.json
+Package.swift
+
+# ============================================
+# OS / Shell
+# ============================================
+*.DS_Store
+*.swp
+.*.swp
+*~
+
+# ============================================
+# Test / Coverage
+# ============================================
+/coverage/
+/coverage.info
+/coverage.json
+/coverage.html
+/coverage/lcov.info
+*.lcov
+*.gcov
+*.gcda
+
+# ============================================
+# OS X / Linux
+# ============================================
+.directory
+.dirstamp
+.nfs*
+
+# ============================================
+# Application
+# ============================================
+*.log
+*.pid
+*.seed
+*.sublime-*
+.idea/
+*.iml
+*/bin/
+*/obj/
+*/vendor/
+build/
+node_modules/
+dist/
+out/
+*.tar.gz
+*.rar
+*.7z
