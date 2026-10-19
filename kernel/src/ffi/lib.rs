@@ -1,11 +1,10 @@
-//! FFI API for flutter_rust_bridge
+//! API pública del kernel para Flutter.
 //!
-//! Esta es la API pública que Dart puede llamar. Todas las funciones aquí
-//! deben tener el atributo #[flutter_rust_bridge::bridge].
+//! Fase 2: tipos serializables + `KernelApiImpl` nativo.
+//! Fase 5: codegen `flutter_rust_bridge` v2 sobre estos tipos
+//! (los tipos ya derivan Serialize/Deserialize y son `Clone`).
 
-use flutter_rust_bridge::Stream;
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
 
 /// Tipos de codificación de video
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -87,41 +86,6 @@ pub enum KernelState {
     Error(String),
 }
 
-/// API principal del kernel
-#[flutter_rust_bridge::bridge]
-pub trait KernelApi {
-    // === Captura de pantalla ===
-
-    /// Iniciar captura de pantalla
-    fn start_capture(&mut self, config: CaptureConfig) -> Stream<CaptureEvent>;
-
-    /// Detener captura de pantalla
-    fn stop_capture(&mut self) -> CaptureState;
-
-    /// Obtener estado actual de la captura
-    fn capture_state(&self) -> CaptureState;
-
-    // === Codificación de video ===
-
-    /// Configurar codificación de video
-    fn set_encoder_config(&mut self, codec: VideoCodec, bitrate: u32) -> Result<(), String>;
-
-    /// Obtener métricas del encoder
-    fn encoder_metrics(&self) -> PerformanceMetrics;
-
-    // === Inyección de input (control remoto) ===
-
-    /// Inyectar evento de mouse
-    fn inject_mouse_event(&self, event: InputEvent) -> Result<(), String>;
-
-    /// Inyectar evento de teclado
-    fn inject_key_event(&self, event: InputEvent) -> Result<(), String>;
-
-    // === Estado del kernel ===
-
-    /// Obtener estado del kernel
-    fn kernel_state(&self) -> KernelState;
-
-    /// Reinciar el kernel (para pruebas)
-    fn restart(&mut self) -> Result<(), String>;
-}
+// NOTA Fase 2: el trait `KernelApi` con `#[flutter_rust_bridge::bridge]`
+// se genera en Fase 5 con FRB v2 (`flutter_rust_bridge_codegen`).
+// La lógica vive en `KernelApiImpl` (ver `impl.rs`).

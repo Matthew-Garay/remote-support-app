@@ -2,4 +2,4 @@
 
 pub mod input_simulator;
 
-pub use input_simulator::InputSimulator;
+pub use input_simulator::{InputSimulator, KeyEvent, MouseEvent};

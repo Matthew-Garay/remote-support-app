@@ -12,5 +12,13 @@ pub mod encoder;
 pub mod network;
 pub mod ffi;
 
-// Re-export de la API pública para FFI
-pub use ffi::KernelApi;
+// Re-export de la API pública para FFI y para ejemplos/tests externos.
+pub use ffi::{
+    CaptureConfig as FfiCaptureConfig, CaptureEvent, CaptureState, InputEvent, KernelState,
+    MouseButton, PerformanceMetrics, VideoCodec, VideoResolution,
+};
+pub use encoder::{
+    ContentHint, EncodedPacket, EncoderBackendKind, EncoderConfig, EncoderError, EncoderStats,
+    PixelFormat, RateControl, VideoEncoder, VideoEncoderBackend, VideoFrame,
+};
+pub use screen_capture::{CaptureConfig, ScreenCapture};

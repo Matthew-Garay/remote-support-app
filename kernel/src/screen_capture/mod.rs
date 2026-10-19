@@ -3,4 +3,4 @@
 pub mod capture_engine;
 
 // Re-export
-pub use capture_engine::ScreenCapture;
+pub use capture_engine::{CaptureConfig, ScreenCapture};

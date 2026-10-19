@@ -2,6 +2,7 @@
 //! Define la API pública expuesta a Dart a través de flutter_rust_bridge.
 
 mod lib;
+#[path = "impl.rs"]
 mod impl_;
 
 pub use lib::*;
