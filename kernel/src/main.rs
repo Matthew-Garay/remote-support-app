@@ -32,7 +32,7 @@ async fn main() {
     // Inicializar sub-sistemas
     let mut screen_capture = screen_capture::ScreenCapture::new();
     let mut encoder = encoder::VideoEncoder::new();
-    let mut network = network::NetworkEngine::new();
+    let network = network::NetworkEngine::new();
 
     screen_capture.init().await;
     screen_capture
@@ -59,6 +59,35 @@ async fn main() {
     }
     network.init().await;
 
+    // Fase 3: cablear WebRTC + señalización (mejor esfuerzo: sin servidor de
+    // señalización activo el pipeline sigue funcionando, sin peer).
+    network.configure(
+        network::types::NetworkConfig {
+            local_id: "kernel-demo".to_string(),
+            peer_address: None,
+            protocol: network::types::Protocol::WebRTC,
+            bandwidth_estimate_bps: Some(1_000_000),
+        },
+        network::types::PeerConfig {
+            role: network::types::Role::Offer,
+            protocol: network::types::Protocol::WebRTC,
+            ice_servers: Vec::new(),
+            preferred_codec: "h264".to_string(),
+            bandwidth_estimate_bps: Some(1_000_000),
+        },
+    );
+    match network
+        .connect(
+            "ws://127.0.0.1:8080/ws".to_string(),
+            "kernel-demo".to_string(),
+            String::new(),
+        )
+        .await
+    {
+        Ok(()) => tracing::info!("red: sesión WebRTC iniciada (peer pendiente)"),
+        Err(e) => tracing::warn!("red: sin señalización ({e}); pipeline sin peer"),
+    }
+
     tracing::info!("backend encoder: {:?}", encoder.backend_kind());
 
     // Bucle del pipeline: captura → encode → red.
@@ -73,7 +102,9 @@ async fn main() {
             Ok(Some(pkt)) => {
                 n += 1;
                 // Fase 3: `network.send_video(pkt)` vía WebRTC.
-                network.send_data(pkt.data).await;
+                if let Err(e) = network.send_data(pkt.data).await {
+                    tracing::trace!("send_data (sin peer conectado): {e}");
+                }
                 if n % 30 == 0 {
                     let s = encoder.stats();
                     tracing::info!(

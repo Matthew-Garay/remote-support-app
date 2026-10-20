@@ -1,0 +1,15 @@
+# Toolchain de desarrollo en Windows.
+#
+# El host no tiene MSVC Build Tools ni el Windows SDK completos, por lo que el
+# target `x86_64-pc-windows-gnu` se compila con LLVM-MinGW (clang + lld).
+# `x86_64-w64-mingw32-clang.exe` debe estar en el PATH:
+#
+#   $env:PATH = "C:\ruta\a\llvm-mingw\bin;$env:PATH"
+#   cargo +stable-x86_64-pc-windows-gnu build
+#
+# `windows-sys` invoca `dlltool` para generar las librerías de importación;
+# LLVM-MinGW lo provee y también está en el PATH.
+
+[target.x86_64-pc-windows-gnu]
+linker = "x86_64-w64-mingw32-clang.exe"
+ar = "llvm-ar.exe"

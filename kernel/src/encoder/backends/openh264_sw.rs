@@ -8,10 +8,10 @@
 //!   que un cliente que se une a mitad de stream decodifique.
 //! - `EncodedBitStream::to_vec()` emite Annex-B con start codes.
 
-use super::backend::VideoEncoderBackend;
-use super::convert::to_i420;
-use super::error::{EncoderError, EncoderResult};
-use super::types::{EncodedPacket, EncoderBackendKind, EncoderConfig, VideoFrame};
+use super::super::backend::VideoEncoderBackend;
+use super::super::convert::to_i420;
+use super::super::error::{EncoderError, EncoderResult};
+use super::super::types::{EncodedPacket, EncoderBackendKind, EncoderConfig, VideoFrame};
 
 use openh264::encoder::{
     BitRate, Complexity, Encoder, EncoderConfig as O264Config, FrameRate, FrameType,
@@ -42,15 +42,15 @@ impl OpenH264Backend {
     /// Traduce [`EncoderConfig`] a [`O264Config`].
     fn build_o264_config(cfg: &EncoderConfig) -> O264Config {
         let usage = match cfg.content {
-            super::types::ContentHint::Screen => UsageType::ScreenContentRealTime,
-            super::types::ContentHint::Camera => UsageType::CameraVideoRealTime,
+            super::super::types::ContentHint::Screen => UsageType::ScreenContentRealTime,
+            super::super::types::ContentHint::Camera => UsageType::CameraVideoRealTime,
         };
         let rc = match cfg.rate_control {
-            super::types::RateControl::Cbr | super::types::RateControl::Vbr => {
+            super::super::types::RateControl::Cbr | super::super::types::RateControl::Vbr => {
                 RateControlMode::Bitrate
             }
             // QP fijo ≈ control por calidad.
-            super::types::RateControl::ConstQp => RateControlMode::Quality,
+            super::super::types::RateControl::ConstQp => RateControlMode::Quality,
         };
         // Complejidad media: equilibrio 1080p30 en CPU moderno.
         // En escritorio con poco movimiento OpenH264 rinde ~60-120 fps

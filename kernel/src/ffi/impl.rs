@@ -19,7 +19,6 @@ pub struct KernelApiImpl {
     #[allow(dead_code)]
     input: Arc<Mutex<InputSimulator>>,
     encoder: Arc<Mutex<VideoEncoder>>,
-    #[allow(dead_code)]
     network: Arc<Mutex<NetworkEngine>>,
 }
 
@@ -134,5 +133,144 @@ impl KernelApiImpl {
             .init(EncoderConfig::default())
             .await
             .map_err(|e| e.to_string())
+    }
+
+    // ---------------------------------------------------------------------------
+    // Red (Fase 3): WebRTC + señalización
+    // ---------------------------------------------------------------------------
+
+    /// Conecta el motor de red: señalización WebSocket + negociación WebRTC.
+    pub async fn network_connect(
+        &self,
+        config: crate::ffi::NetworkConnectConfig,
+    ) -> Result<(), String> {
+        let net = self.network.lock().await;
+
+        let role = if config.offering {
+            crate::network::types::Role::Offer
+        } else {
+            crate::network::types::Role::Answer
+        };
+
+        let mut ice_servers = Vec::new();
+        if !config.stun_urls.is_empty() {
+            ice_servers.push(crate::network::types::IceServer {
+                urls: config.stun_urls.clone(),
+                username: None,
+                credential: None,
+                credential_type: None,
+            });
+        }
+        if !config.turn_urls.is_empty() {
+            ice_servers.push(crate::network::types::IceServer {
+                urls: config.turn_urls.clone(),
+                username: Some(config.turn_username.clone()),
+                credential: Some(config.turn_credential.clone()),
+                credential_type: None,
+            });
+        }
+
+        net.configure(
+            crate::network::types::NetworkConfig {
+                local_id: config.device_id.clone(),
+                peer_address: None,
+                protocol: crate::network::types::Protocol::WebRTC,
+                bandwidth_estimate_bps: None,
+            },
+            crate::network::types::PeerConfig {
+                role,
+                protocol: crate::network::types::Protocol::WebRTC,
+                ice_servers,
+                preferred_codec: "h264".to_string(),
+                bandwidth_estimate_bps: None,
+            },
+        );
+
+        net.connect(config.ws_url, config.device_id, config.password_hash)
+            .await
+    }
+
+    /// Solicita conectarse a otro dispositivo (servidor de señalización).
+    pub async fn network_request_connection(
+        &self,
+        target_device_id: String,
+    ) -> Result<(), String> {
+        self.network
+            .lock()
+            .await
+            .request_connection(target_device_id)
+            .await
+    }
+
+    /// Envía bytes por el DataChannel WebRTC.
+    pub async fn network_send_data(&self, data: Vec<u8>) -> Result<usize, String> {
+        self.network.lock().await.send_data(data).await
+    }
+
+    /// Estado de la conexión de red.
+    pub async fn network_state(&self) -> String {
+        self.network.lock().await.state().await
+    }
+
+    /// Cierra la conexión de red.
+    pub async fn network_disconnect(&self) -> Result<(), String> {
+        self.network.lock().await.disconnect().await
+    }
+
+    /// Suscripción a eventos de red.
+    ///
+    /// NOTA Fase 5: cuando se ejecute `flutter_rust_bridge_codegen generate`,
+    /// se añadirá una variante que reciba `StreamSink<NetworkEvent>` (tipo
+    /// generado por FRB en el propio crate); hasta entonces se usa un
+    /// callback simple, funcional para pruebas desde Rust.
+    pub async fn network_subscribe<F>(&self, callback: F) -> Result<(), String>
+    where
+        F: Fn(crate::ffi::NetworkEvent) + Send + Sync + 'static,
+    {
+        let net = self.network.lock().await;
+        net.set_on_event(move |ev| {
+            let ffi_event = match ev.kind {
+                crate::network::types::NetworkEventKind::ConnectionStateChanged => {
+                    crate::ffi::NetworkEvent::ConnectionStateChanged {
+                        state: ev
+                            .payload
+                            .get("state")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or_default()
+                            .to_string(),
+                    }
+                }
+                crate::network::types::NetworkEventKind::DataChannelMessage => {
+                    let data = ev
+                        .payload
+                        .get("data")
+                        .and_then(|v| v.as_array())
+                        .map(|arr| {
+                            arr.iter()
+                                .filter_map(|x| x.as_u64())
+                                .map(|x| x as u8)
+                                .collect()
+                        })
+                        .unwrap_or_default();
+                    crate::ffi::NetworkEvent::DataChannelMessage { data }
+                }
+                // AuthResult (y futuros eventos) → variante genérica.
+                _ => crate::ffi::NetworkEvent::AuthResult {
+                    success: ev
+                        .payload
+                        .get("auth")
+                        .and_then(|v| v.as_bool())
+                        .unwrap_or(false),
+                    message: ev
+                        .payload
+                        .get("message")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or_default()
+                        .to_string(),
+                },
+            };
+            callback(ffi_event);
+        });
+        Ok(())
     }
 }
